@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>📒 খরচের হিসাব</title>
+  <style>
+    body {
+      font-family: "Noto Sans Bengali", sans-serif;
+      margin: 0;
+      padding: 10px;
+      background: #f8fafc;
+      color: #222;
+      font-size: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      text-align: center;
+      color: #0d9488;
+      margin: 10px 0;
+      font-size: 1.4em;
+    }
+
+    /* 🔘 Filter & Search Area */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: #e0f2f1;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+    }
+
+    .controls label {
+      margin: 4px;
+      font-weight: 600;
+    }
+
+    .controls select, .controls input, .controls button {
+      padding: 6px 8px;
+      margin: 4px;
+      border: 1px solid #94a3b8;
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
+    }
+
+    .controls button {
+      background: #10b981;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .controls button:hover {
+      background: #059669;
+    }
+
+    /* 🔍 Search box */
+    #searchBox {
+      width: 90%;
+      max-width: 400px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* 🧩 Gap between search box and table */
+    .table-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-top: 15px;
+      margin-bottom: 70px; /* for footer space */
+    }
+
+    /* 📋 Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 10px 5px;
+      text-align: center;
+      border: 1px solid #ccc;
+    }
+
+    th {
+      background: #14b8a6;
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    /* 🧮 Fixed Footer */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #0d9488;
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-weight: bold;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.15);
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      z-index: 100;
+      font-size: 17px;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    /* ⬆️ Scroll to top button */
+    #topBtn {
+      position: fixed;
+      bottom: 70px;
+      right: 20px;
+      background: #14b8a6;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 99;
+    }
+
+    #topBtn:hover {
+      background: #0f766e;
+    }
+
+    /* 📱 Popup */
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      position: relative;
+      text-align: center;
+      width: 90%;
+      max-width: 320px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .popup-content span {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+      color: red;
+    }
+
+    @media (max-width: 480px) {
+      table th, table td {
+        font-size: 14px;
+        padding: 6px;
+      }
+      h2 {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📒 খরচের হিসাব</h2>
+
+  <div class="controls">
+    <label>দিন:</label>
+    <select id="dayFilter"></select>
+    <label>মাস:</label>
+    <select id="monthFilter"></select>
+    <label>বছর:</label>
+    <select id="yearFilter"></select>
+    <button onclick="applyFilter()">ফিল্টার</button>
+    <button onclick="clearAll()">🧹 রিসেট</button>
+  </div>
+
+  <div style="text-align:center;">
+    <input type="text" id="searchBox" placeholder="🔍 আইটেমের নাম লিখুন..." onkeyup="applyFilter()">
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>তারিখ</th>
+          <th>নাম</th>
+          <th>টাকা</th>
+        </tr>
+      </thead>
+      <tbody id="itemTable"></tbody>
+    </table>
+  </div>
+
+  <footer id="totalFooter">মোট খরচ: 0 টাকা</footer>
+
+  <!-- ⬆️ Scroll to top button -->
+  <button id="topBtn" onclick="scrollToTop()">⬆️</button>
+
+  <!-- Popup -->
+  <div class="popup" id="popupBox">
+    <div class="popup-content">
+      <span onclick="closePopup()">✖</span>
+      <p>📅 31 August 2025 থেকে হিসাব শুরু হয়েছে।<br>📟 Last meter reading (28/09/2025): 695</p>
+    </div>
+  </div>
+
+  <script>
+    const items = [
+      { name: "আতপ ধান ভানানো ", price: 50, date: "2025-10-19" },
+      { name: "চিনি (500gm, 25), আটা(1kg, 43), সাদা তেল(200gm, 32), সুজি (10)", price: 110, date: "2025-10-18" },
+      { name: "চপ ও pakori(10),মুড়ি (40), chata sarano(50)", price: 100, date: "2025-10-17" },
+      { name: "মাছ, চপ(2 pcs.)", price: 20, date: "2025-10-16" },
+      { name: "চপ", price: 10, date: "2025-10-15" },
+      { name: "সরষের তেল 500gm(95),tata salt (15), মুড়ি (27), Colgate (20), gas light (4)", price: 160, date: "2025-10-14" },
+      { name: "চপ ও গজা, suman (50)", price: 65, date: "2025-10-13" },
+      { name: "চপ ও গজা, মাংস,সাইকেল সারানো", price: 90, date: "2025-10-12" },
+      { name: "তেল 100gm,Recharge(39)", price: 59, date: "2025-10-11" },
+      { name: "মুড়ি", price: 40, date: "2025-10-10" },
+      { name: "মুড়ি (10), মুসুর(6), সিঙ্গাড়া (10), উচ্ছে ও লঙ্কা (20), চাউমিন (20), মটর, মুসুর,dav saban (25), আদা, চাউমিন মশলা (5), আটা, jasmin oil (10)", price: 196, date: "2025-10-09" },
+      { name: "EMRS form fillup ", price: 2000, date: "2025-10-07" },
+      { name: "বাতাসা ও নকুলদানা(10), মুসুর (12), ব্লেড ও দিয়াশলাই (4), মুড়ি ও pakori(40), চিনি (400 gm 20 টাকা ", price: 86, date: "2025-10-06" },
+      { name: "চপ ও খাজা (20), মামা দিদি(40), চুল কাটা (40)", price: 100, date: "2025-10-04" },
+      { name: "মাংস (100), আটা(2 packet, 86), তেল (400gm, 76), সাদা তেল (45), সিমোই (27), জুয়ান+shampoo (6)", price: 340, date: "2025-10-03" },
+      { name: "কাটলেট ও vegetables চপ (70), আইসক্রিম(50), বেলুন (10)", price: 130, date: "2025-10-02" },
+      { name: "(মাছ 500gm 100 টাকা),💊 Mom 's Medicine (450 টাকা), লঙ্কা ও বিলাতি (20), লেবু (30), কলা (25), লাল চেরি ফল (10), তাল মিছরি (75), পেট্রোল (55)", price: 765, date: "2025-10-02" },
+      { name: "মাংস (70 টাকা), 🧪জাব পোকার ঔষুধ (400 টাকা)", price: 470, date: "2025-10-01" },
+      { name: "আলু (2kg 32), চিনি (500gm 25), মুড়ি 2packet, মুসুর 12 টাকা,shampoo 1pcs", price: 90, date: "2025-10-01" },
+      { name: "সাদা তেল ( 300gm 45 টাকা), আটা (43),shampoo 2pcs", price: 90, date: "2025-09-30" },
+      { name: "মুড়ি, মুসুর (14 টাকা 100gm), ডিম (2 টি 12 টাকা)", price: 36, date: "2025-09-29" },
+      { name: "আলু (15), মাংস (50)", price: 65, date: "2025-09-28" },
+      { name: "ডিম, মুসুর", price: 21, date: "2025-09-27" },
+      { name: "মুড়ি (26), খাস্তা (24), ধার (2), সাবান গুরি (50), মটর (30), চাউমিন (20), chowmin মসলা (5),জাসমিন তেল (20), গাজর (10),পটল (10), বিলাতি (10), লঙ্কা (10), সিঙ্গাড়া (10)", price: 227, date: "2025-09-25" },
+      { name: "আলু (16), ডিম (14), পাউরুটি (5)", price: 35, date: "2025-09-24" },
+      { name: "পস্তু (45), মুড়ি (26), আদা(6),কেক(5)", price: 82, date: "2025-09-23" },
+      { name: "LIC Pranab ", price: 4138, date: "2025-09-22" },
+      { name: "Ranibandh to Khatra, বাটরা(24),Khatra to Ranibandh ", price: 74, date: "2025-09-22" },
+      { name: "pakori 10pcs, 7479257078 Recharge", price: 49, date: "2025-09-21" },
+      { name: "pakori 10pcs, খাজা", price: 15, date: "2025-09-20" },
+      { name: "pakori 10pcs, খাজা", price: 15, date: "2025-09-19" },
+      { name: "চপ 2pcs", price: 10, date: "2025-09-18" },
+      { name: "মাংস 50, চপ, মুড়ি", price: 100, date: "2025-09-17" },
+      { name: "Anup 50, সাদা তেল 300 gm 45, আলু 2kg, সুজি 8packet, পাউরুটি,বেসন, চিনি ", price: 250, date: "2025-09-16" },
+      { name: "pratyush mess to bus stand, bus stand to Durgapur, মুড়ি- চপ- ঘুগনি, জলের বোতল, Durgapur to Benachiti, Benachiti to Shantiniketan Polytechnic (9:15am-9:35), Shantiniketan Polytechnic to Benachiti, Benachiti to Durgapur, সিঙ্গাড়া 2pcs, Chocolate, Durgapur to Bankura, Bankura to Khatra (5:10pm-7pm), ডিমের চপ, মাংস ছাট, Khatra to Ranibandh (Vivek 7pm khatra,akkhuta 7:33pm ), ফুচকা", price: 397, date: "2025-09-15" },
+      { name: "চপ 4টি, পেট্রোল laltu dada, সিঙ্গাড়া ও মিষ্টি, Ranibandh to Bankura (4:30pm, বনলতা বাস), Bankura bus stand to pratyush mess", price: 170, date: "2025-09-14" },
+      { name: "বেসন, জুয়ান, পাউরুটি", price: 30, date: "2025-09-13" },
+      { name: "ইউরিয়া 2kg, কেক 2pcs, চানাচুর 1packet", price: 38, date: "2025-09-12" },
+      { name: "তেল(600gm 114 টাকা), সাদা তেল 200gm, চাউমিন 1প্যাকেট, ছোলা 250gm, চিনি 500gm, গোলমরিচ 2প্যাকেট ", price: 228, date: "2025-09-11" },
+      { name: "শসা, পটল, মাছ, বিলাতি", price: 70, date: "2025-09-11" },
+      { name: "মাজরা পোকার ঔষুধ", price: 200, date: "2025-09-11" },
+      { name: "তেল", price: 20, date: "2025-09-11" },
+      { name: "Tractor 🚜", price: 1700, date: "2025-09-10" },
+      { name: "চপ 2 pcs, খাজা 2 pcs", price: 20, date: "2025-09-08" },
+      { name: "Cow's Medicine (Dr. Susanta Mamu)", price: 500, date: "2025-09-08" },
+      { name: "মুড়ি, ডিম 3 pcs, Colgate 1 pcs ", price: 67, date: "2025-09-08" },
+      { name: "সিঙ্গাড়া, bread চপ ", price: 30, date: "2025-09-07" },
+      { name: "Cetirizine Tablets ", price: 10, date: "2025-09-07" },
+      { name: "বিলাতি, উচ্ছে, পটল, শসা, লঙ্কা ", price: 80, date: "2025-09-07" },
+      { name: "আলু, মুড়ির চাল, চাউমিন, চাউমিন মসলা ", price: 80, date: "2025-09-07" },
+      { name: "মুড়ি 500gm, সাদা তেল 200gm, বেসন 14 টাকা ", price: 70, date: "2025-09-06" },
+      { name: "মাংস, আলু 1.5kg, চিনি 250gm ", price: 120, date: "2025-09-05" },
+      { name: "মুড়ি ও চপ ", price: 60, date: "2025-09-04" },
+      { name: "Fuljhore to Durgapur, Durgapur to Ranibandh, আপেল+বেদানা, সিঙ্গাড়া ", price: 220, date: "2025-09-03" },
+      { name: "মাংস ভাত ", price: 100, date: "2025-09-02" },
+      { name: "মুড়ি 1 packet, চপ+ জিলিপি", price: 27, date: "2025-09-02" },
+      { name: "Fuljhore to Durgapur, Durgapur to Howrah, Metro, ডিম ভাত, Metro, Howrah to Burdwan, Burdwan to Durgapur, Durgapur to Fuljhore, রুটি+ ঘুগনি", price: 335, date: "2025-09-01" },
+      { name: "ডিম 2 pcs, Cake 4 pcs, সুয়াবিন 1 packet", price: 44, date: "2025-08-31" },
+      { name: "Durgapur to Fuljhore", price: 20, date: "2025-08-31" },
+      { name: "Bankura to Durgapur", price: 50, date: "2025-08-31" },
+      { name: "ডিম ভাত", price: 60, date: "2025-08-31" },
+      { name: "Ranibandh to Bankura", price: 60, date: "2025-08-31" },
+      { name: "মুড়ি 1 packet", price: 10, date: "2025-08-31" },
+      { name: "চপ 3 pcs", price: 15, date: "2025-08-31" },
+      { name: "সাদা তেল 200ml", price: 30, date: "2025-08-31" },
+      { name: "আটা 1kg", price: 45, date: "2025-08-31" }
+
+    ];
+
+    const itemTable = document.getElementById("itemTable");
+    const totalFooter = document.getElementById("totalFooter");
+    const topBtn = document.getElementById("topBtn");
+
+    // 🎯 Animate Total Function
+    function animateTotal(target) {
+      let current = 0;
+      const step = target / 40; // smoother animation
+      const interval = setInterval(() => {
+        current += step;
+        if (current >= target) {
+          current = target;
+          clearInterval(interval);
+        }
+        totalFooter.innerText = "মোট খরচ: " + Math.round(current) + " টাকা";
+      }, 25);
+    }
+
+    function loadData(filtered = items) {
+      itemTable.innerHTML = "";
+      let total = 0;
+      filtered.forEach(item => {
+        let tr = document.createElement("tr");
+        tr.innerHTML = `<td>${item.date}</td><td>${item.name}</td><td>${item.price}</td>`;
+        itemTable.appendChild(tr);
+        total += item.price;
+      });
+      animateTotal(total);
+    }
+
+    function fillFilters() {
+      let days = new Set(), months = new Set(), years = new Set();
+      items.forEach(i => {
+        let d = new Date(i.date);
+        days.add(d.getDate());
+        months.add(d.getMonth() + 1);
+        years.add(d.getFullYear());
+      });
+      fillSelect("dayFilter", days);
+      fillSelect("monthFilter", months);
+      fillSelect("yearFilter", years);
+    }
+
+    function fillSelect(id, values) {
+      const sel = document.getElementById(id);
+      sel.innerHTML = "<option value=''>--</option>";
+      [...values].sort((a, b) => a - b).forEach(v => {
+        sel.innerHTML += `<option value="${v}">${v}</option>`;
+      });
+    }
+
+    function applyFilter() {
+      const d = document.getElementById("dayFilter").value;
+      const m = document.getElementById("monthFilter").value;
+      const y = document.getElementById("yearFilter").value;
+      const query = document.getElementById("searchBox").value.toLowerCase();
+
+      let filtered = items.filter(i => {
+        let date = new Date(i.date);
+        let matchesDate = (!d || date.getDate() == d) &&
+                          (!m || date.getMonth() + 1 == m) &&
+                          (!y || date.getFullYear() == y);
+        let matchesSearch = i.name.toLowerCase().includes(query);
+        return matchesDate && matchesSearch;
+      });
+
+      loadData(filtered);
+    }
+
+    function clearAll() {
+      document.getElementById("dayFilter").value = "";
+      document.getElementById("monthFilter").value = "";
+      document.getElementById("yearFilter").value = "";
+      document.getElementById("searchBox").value = "";
+      loadData();
+    }
+
+    function closePopup() {
+      document.getElementById("popupBox").style.display = "none";
+    }
+
+    // 🔼 Scroll-to-top feature
+    window.onscroll = () => {
+      topBtn.style.display = document.documentElement.scrollTop > 150 ? "block" : "none";
+    };
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    window.onload = () => {
+      loadData();
+      fillFilters();
+    };
+  </script>
+</body>
+</html>
