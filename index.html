@@ -127,7 +127,7 @@
     }
 
     /* ⬆️ Scroll to top button */
-    #topBtn {
+    /* #topBtn {
       position: fixed;
       bottom: 70px;
       right: 20px;
@@ -146,7 +146,26 @@
 
     #topBtn:hover {
       background: #0f766e;
-    }
+    } */
+     #topBtn {
+  position: fixed;
+  bottom: 45px;
+  right: 51px;
+  color: #0d9488;
+  border: none;
+  font-size: 25px;
+  cursor: pointer;
+  display: none;
+  z-index: 99;
+  transition: transform 0.2s ease, opacity 0.3s ease;
+  opacity: 0.8;
+}
+
+#topBtn:hover {
+  transform: translateY(-3px);
+  opacity: 1;
+  color: #059669;
+}
 
     /* 📱 Popup */
     .popup {
